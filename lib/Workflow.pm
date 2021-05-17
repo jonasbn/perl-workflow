@@ -108,91 +108,36 @@ sub get_action_fields {
 sub execute_action {
     my ( $self, $action_name, $autorun ) = @_;
 
-    # This checks the conditions behind the scenes, so there's no
-    # explicit 'check conditions' step here
+    while ( $action_name ) {
+        my $wf_state =
+            $self->_execute_single_action( $action_name, $autorun );
 
-    my $action = $self->get_action($action_name);
-
-    # Need this in case we encounter an exception after we store the
-    # new state
-
-    my $old_state = $self->state;
-    my ( $new_state, $action_return );
-
-    eval {
-        $action->validate($self);
-        $self->log->is_debug && $self->log->debug("Action validated ok");
-        $action_return = $action->execute($self);
-        $self->log->is_debug && $self->log->debug("Action executed ok");
-
-        $new_state = $self->_get_next_state( $action_name, $action_return );
-        if ( $new_state ne NO_CHANGE_VALUE ) {
+        if ( not $wf_state->autorun ) {
+            last;
+        }
+        else {
             $self->log->is_info
                 && $self->log->info(
-                "Set new state '$new_state' after action executed");
-            $self->state($new_state);
+                "State '", $wf_state->state, "' marked to be run ",
+                "automatically; executing that state/action..."
+                );
+
+            if ( $wf_state->may_stop() ) {
+                $action_name =
+                    eval { $wf_state->get_autorun_action_name($self); };
+            }
+            else {
+                $action_name = $wf_state->get_autorun_action_name($self);
+            }
+
+            if ( $action_name ) {
+                $self->log->is_debug
+                    && $self->log->debug(
+                    "Found action '$action_name' to execute in autorun state ",
+                    $wf_state->state
+                    );
+            }
         }
-
-        # this will save the workflow histories as well as modify the
-        # state of the workflow history to reflect the NEW state of
-        # the workflow; if it fails we should have some means for the
-        # factory to rollback other transactions...
-
-        # Update
-        # Jim Brandt 4/16/2008: Implemented transactions for DBI persisters.
-        # Implementation still depends on each persister.
-
-        $self->_factory()->save_workflow($self);
-
-        # If using a DBI persister with no autocommit, commit here.
-        $self->_factory()->_commit_transaction($self);
-
-        $self->log->is_info
-            && $self->log->info("Saved workflow with possible new state ok");
-    };
-
-    # If there's an exception, reset the state to the original one and
-    # rethrow
-
-    if ($EVAL_ERROR) {
-        my $error = $EVAL_ERROR;
-        $self->log->error(
-            "Caught exception from action: $error; reset ",
-            "workflow to old state '$old_state'"
-        );
-        $self->state($old_state);
-
-        $self->_factory()->_rollback_transaction($self);
-
-        # If it is a validation error we rethrow it so it can be evaluated
-        # by the caller to provide better feedback to the user
-        if (Exception::Class->caught('Workflow::Exception::Validation')) {
-            $EVAL_ERROR->rethrow();
-        }
-
-        # Don't use 'workflow_error' here since $error should already
-        # be a Workflow::Exception object or subclass
-
-        croak $error;
-    }
-
-    # clear condition cache on state change
-    delete $self->{'_condition_result_cache'};
-    $self->notify_observers( 'execute', $old_state, $action_name, $autorun );
-
-    my $new_state_obj = $self->_get_workflow_state;
-    if ( $old_state ne $new_state ) {
-        $self->notify_observers( 'state change', $old_state, $action_name,
-            $autorun );
-    }
-
-    if ( $new_state_obj->autorun ) {
-        $self->log->is_info
-            && $self->log->info(
-            "State '$new_state' marked to be run ",
-            "automatically; executing that state/action..."
-            );
-        $self->_auto_execute_state($new_state_obj);
     }
     return $self->state;
 }
@@ -311,6 +256,89 @@ sub set {
     $self->{$prop} = $value;
 }
 
+
+sub _execute_single_action {
+    my ( $self, $action_name, $autorun ) = @_;
+
+    # This checks the conditions behind the scenes, so there's no
+    # explicit 'check conditions' step here
+    my $action = $self->get_action($action_name);
+
+    # Need this in case we encounter an exception after we store the
+    # new state
+    my $old_state = $self->state;
+    my ( $new_state, $action_return );
+
+    eval {
+        $action->validate($self);
+        $self->log->is_debug && $self->log->debug("Action validated ok");
+        $action_return = $action->execute($self);
+        $self->log->is_debug && $self->log->debug("Action executed ok");
+
+        $new_state = $self->_get_next_state( $action_name, $action_return );
+        if ( $new_state ne NO_CHANGE_VALUE ) {
+            $self->log->is_info
+                && $self->log->info(
+                "Set new state '$new_state' after action executed");
+            $self->state($new_state);
+        }
+
+        # this will save the workflow histories as well as modify the
+        # state of the workflow history to reflect the NEW state of
+        # the workflow; if it fails we should have some means for the
+        # factory to rollback other transactions...
+
+        # Update
+        # Jim Brandt 4/16/2008: Implemented transactions for DBI persisters.
+        # Implementation still depends on each persister.
+
+        $self->_factory()->save_workflow($self);
+
+        # If using a DBI persister with no autocommit, commit here.
+        $self->_factory()->_commit_transaction($self);
+
+        $self->log->is_info
+            && $self->log->info("Saved workflow with possible new state ok");
+    };
+
+    # If there's an exception, reset the state to the original one and
+    # rethrow
+
+    if ($EVAL_ERROR) {
+        my $error = $EVAL_ERROR;
+        $self->log->error(
+            "Caught exception from action: $error; reset ",
+            "workflow to old state '$old_state'"
+        );
+        $self->state($old_state);
+
+        $self->_factory()->_rollback_transaction($self);
+
+        # If it is a validation error we rethrow it so it can be evaluated
+        # by the caller to provide better feedback to the user
+        if (Exception::Class->caught('Workflow::Exception::Validation')) {
+            $EVAL_ERROR->rethrow();
+        }
+
+        # Don't use 'workflow_error' here since $error should already
+        # be a Workflow::Exception object or subclass
+
+        croak $error;
+    }
+
+    # clear condition cache on state change
+    delete $self->{'_condition_result_cache'};
+    $self->notify_observers( 'execute', $old_state, $action_name, $autorun );
+
+    my $new_state_obj = $self->_get_workflow_state;
+    if ( $old_state ne $new_state ) {
+        $self->notify_observers( 'state change', $old_state, $action_name,
+            $autorun );
+    }
+
+    return $new_state_obj;
+}
+
 sub _get_action { # for backward compatibility with 1.49 and before
     goto &get_action;
 }
@@ -340,31 +368,6 @@ sub _get_next_state {
     my ( $self, $action_name, $action_return ) = @_;
     my $wf_state = $self->_get_workflow_state;
     return $wf_state->get_next_state( $action_name, $action_return );
-}
-
-sub _auto_execute_state {
-    my ( $self, $wf_state ) = @_;
-    my $action_name;
-    eval { $action_name = $wf_state->get_autorun_action_name($self); };
-    if ($EVAL_ERROR)
-    {    # we found an error, possibly more than one or none action
-            # are available in this state
-        if ( !$wf_state->may_stop() ) {
-
-            # we are in autorun, but stopping is not allowed, so
-            # rethrow
-            my $error = $EVAL_ERROR;
-            $error->rethrow();
-        }
-    } else {    # everything is fine, execute action
-        $self->log->is_debug
-            && $self->log->debug(
-            "Found action '$action_name' to execute in ",
-            "autorun state ",
-            $wf_state->state
-            );
-        $self->execute_action( $action_name, 1 );
-    }
 }
 
 1;

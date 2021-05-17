@@ -59,17 +59,6 @@ sub execute {
             die "Failed to save additional ticket info: $@\n";
         }
     }
-    elsif ( $persister->isa( 'Workflow::Persister::SPOPS' ) ) {
-        my $wf_ticket = eval {
-            My::Persist::WorkflowTicket->new({
-                workflow_id => $wf->id,
-                ticket_id   => $ticket->id,
-            })->save()
-        };
-        if ( $@ ) {
-            die "Failed to save additional ticket info: $@\n";
-        }
-    }
     elsif ( $persister->isa( 'Workflow::Persister::File' ) ) {
         my %wf_ticket = (
             workflow_id => $wf->id,

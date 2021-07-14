@@ -6,7 +6,7 @@ use warnings;
 our $VERSION = '1.55';
 
 use base qw( Workflow::Condition::Nested );
-use Workflow::Exception qw( condition_error configuration_error );
+use Workflow::Exception qw( configuration_error );
 use English qw( -no_match_vars );
 
 __PACKAGE__->mk_accessors('conditions');
@@ -40,7 +40,7 @@ sub evaluate {
             return $result;
         }
     }
-    condition_error("All nested conditions returned 'false'");
+    return ''; # false
 }
 
 1;

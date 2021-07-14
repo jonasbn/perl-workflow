@@ -10,7 +10,7 @@ use English qw(-no_match_vars);
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($OFF);
 
-use_ok( 'Workflow::Exception', qw(workflow_error validation_error condition_error configuration_error persist_error) );
+use_ok( 'Workflow::Exception', qw(workflow_error validation_error configuration_error persist_error) );
 
 {
     throws_ok {
@@ -33,13 +33,6 @@ use_ok( 'Workflow::Exception', qw(workflow_error validation_error condition_erro
         validation_error('test ', 'validation_error', { foo => 'bar' })
     } 'Exception::Class::Base', 'workflow validation_error exception';
     like($EVAL_ERROR, qr/unknown field foo passed to constructor for class Workflow::Exception::Validation/, 'asserting exception text');
-}
-
-{
-    throws_ok {
-        condition_error('test ', 'condition_error')
-    } 'Workflow::Exception', 'workflow condition_error exception';
-    like($EVAL_ERROR, qr/test condition_error/, 'asserting exception text');
 }
 
 {

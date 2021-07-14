@@ -6,7 +6,7 @@ use base qw( Workflow::Base );
 use Log::Log4perl qw( get_logger );
 use Workflow::Condition;
 use Workflow::Condition::Evaluate;
-use Workflow::Exception qw( workflow_error condition_error );
+use Workflow::Exception qw( workflow_error );
 use Exception::Class;
 use Workflow::Factory qw( FACTORY );
 use English qw( -no_match_vars );
@@ -77,17 +77,7 @@ sub get_available_action_names {
 
 sub is_action_available {
     my ( $self, $wf, $action_name ) = @_;
-    eval { $self->evaluate_action( $wf, $action_name ) };
-
-    # Everything is fine
-    return 1 unless( $EVAL_ERROR );
-
-    # We got an exception, check if it is a Workflow::Exception
-    return 0 if (Exception::Class->caught('Workflow::Exception'));
-
-    $EVAL_ERROR->rethrow() if (ref $EVAL_ERROR);
-
-    croak $EVAL_ERROR;
+    return $self->evaluate_action( $wf, $action_name );
 }
 
 sub clear_condition_cache {
@@ -105,31 +95,19 @@ sub evaluate_action {
     my @conditions = $self->get_conditions($action_name);
     foreach my $condition (@conditions) {
         my $condition_name = $condition->name;
+        my $rv = Workflow::Condition->evaluate_condition($wf, $condition_name);
+        if (! $rv) {
 
-        my $rv;
-        eval {
-            $rv = Workflow::Condition->evaluate_condition($wf, $condition_name);
-        };
-        if ($EVAL_ERROR) {
-            if (Exception::Class->caught('Workflow::Exception::Condition')) {
-                condition_error "No access to action '$action_name' in ",
-                    "state '$state' because $EVAL_ERROR ";
-            }
-            else {
-                $EVAL_ERROR->rethrow() if (ref $EVAL_ERROR ne '');
-                # For briefness, we just send back the first line of EVAL
-                my @t = split /\n/, $EVAL_ERROR;
-                my $ee = shift @t;
-                Exception::Class::Base->throw(
-                    error
-                    => "Got unknown exception while handling condition '$condition_name' / " . $ee );
-            }
-        }
-        elsif (! $rv) {
-            condition_error "No access to action '$action_name' in ",
-                "state '$state' because condition '$condition_name' failed";
+            $self->log->is_debug
+                && $self->log->debug(
+                "No access to action '$action_name' in ",
+                "state '$state' because condition '$condition_name' failed");
+
+            return $rv;
         }
     }
+
+    return 1;
 }
 
 sub get_next_state {

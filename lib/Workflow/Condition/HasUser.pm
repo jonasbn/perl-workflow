@@ -4,7 +4,6 @@ use warnings;
 use strict;
 use base qw( Workflow::Condition );
 use Log::Log4perl qw( get_logger );
-use Workflow::Exception qw( condition_error );
 
 $Workflow::Condition::HasUser::VERSION = '1.55';
 
@@ -23,10 +22,7 @@ sub evaluate {
     my $current_user = $wf->context->param($user_key);
     $self->log->debug( "Current user in the context is '$current_user' retrieved ",
         "using parameter key '$user_key'" );
-    unless ($current_user) {
-        condition_error
-            "No current user available in workflow context key '$user_key'";
-    }
+    return $current_user;
 }
 
 1;

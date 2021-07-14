@@ -6,7 +6,7 @@ use warnings;
 our $VERSION = '1.55';
 
 use base qw( Workflow::Condition::Nested );
-use Workflow::Exception qw( condition_error configuration_error );
+use Workflow::Exception qw( configuration_error );
 use English qw( -no_match_vars );
 
 __PACKAGE__->mk_accessors( 'condition', 'operator', 'argument' );
@@ -68,14 +68,7 @@ sub evaluate {
 
     my $condval = $self->evaluate_condition( $wf, $cond );
 
-    if ( eval "\$condval $op \$argval" ) {
-        return 1;
-    } else {
-        condition_error "Condition failed: '$condval' $op '$argval'";
-    }
-
-    configuration_error
-        "Unknown error in CheckReturn.pm: cond=$cond, op=$op, arg=$arg";
+    return eval "\$condval $op \$argval";
 }
 
 1;

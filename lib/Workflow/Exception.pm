@@ -6,10 +6,6 @@ use strict;
 # Declare some of our exceptions...
 
 use Exception::Class (
-    'Workflow::Exception::Condition' => {
-        isa         => 'Workflow::Exception',
-        description => 'Condition failed errors',
-    },
     'Workflow::Exception::Configuration' => {
         isa         => 'Workflow::Exception',
         description => 'Configuration errors',
@@ -29,14 +25,12 @@ use Log::Log4perl qw( get_logger );
 use Log::Log4perl::Level;
 
 my %TYPE_CLASSES = (
-    condition_error     => 'Workflow::Exception::Condition',
     configuration_error => 'Workflow::Exception::Configuration',
     persist_error       => 'Workflow::Exception::Persist',
     validation_error    => 'Workflow::Exception::Validation',
     workflow_error      => 'Workflow::Exception',
 );
 my %TYPE_LOGGING = (
-    condition_error     => $TRACE,
     configuration_error => $ERROR,
     persist_error       => $ERROR,
     validation_error    => $INFO,
@@ -72,11 +66,6 @@ sub _mythrow {
 }
 
 # Use 'goto' here to maintain the stack trace
-
-sub condition_error {
-    unshift @_, 'condition_error';
-    goto &_mythrow;
-}
 
 sub configuration_error {
     unshift @_, 'configuration_error';
@@ -190,12 +179,6 @@ makes for very readable code:
                 "frightfully wrong: $@",
                 { foo => 'bar' };
 
-=head3 condition_error
-
-This method transforms the error to a condition error.
-
-This exception is thrown via </mythrow> when a condition of a workflow is invalid.
-
 =head3 configuration_error
 
 This method transforms the error to a configuration error.
@@ -225,8 +208,6 @@ This exception is thrown via </mythrow> when input data or similar of a workflow
 =over
 
 =item * B<Workflow::Exception> - import using C<workflow_error>
-
-=item * B<Workflow::Exception::Condition> - import using C<condition_error>
 
 =item * B<Workflow::Exception::Configuration> - import using C<configuration_error>
 

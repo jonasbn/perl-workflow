@@ -6,7 +6,7 @@ use warnings;
 our $VERSION = '1.55';
 
 use base qw( Workflow::Condition::Nested );
-use Workflow::Exception qw( condition_error configuration_error );
+use Workflow::Exception qw( configuration_error );
 use English qw( -no_match_vars );
 
 __PACKAGE__->mk_accessors('conditions');
@@ -37,12 +37,7 @@ sub evaluate {
         $result += $self->evaluate_condition( $wf, $cond ) ? 1 : 0;
     }
 
-    if ($result) {
-        return $result;
-    } else {
-        condition_error( "All of the conditions returned 'false': ",
-            join ', ', @{$conditions} );
-    }
+    return $result;
 }
 
 1;

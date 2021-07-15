@@ -985,11 +985,11 @@ One of the conditions for the action in this state is not met.
 
 =head3 get_action_fields( $action_name )
 
-Return a list of L<Workflow::Action::InputField> objects for the given
+Return a list of L<Workflow::InputField> objects for the given
 C<$action_name>. If C<$action_name> not in the current state or not
 accessible by the environment an exception is thrown.
 
-Returns: list of L<Workflow::Action::InputField> objects
+Returns: list of L<Workflow::InputField> objects
 
 =head3 add_history( @( \%params | $wf_history_object ) )
 

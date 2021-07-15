@@ -7,7 +7,7 @@ use warnings;
 use strict;
 use base qw( Workflow::Base );
 use Log::Log4perl qw( get_logger );
-use Workflow::Action::InputField;
+use Workflow::InputField;
 use Workflow::Validator::HasRequiredField;
 use Workflow::Factory qw( FACTORY );
 use Carp qw(croak);
@@ -120,7 +120,7 @@ sub init {
         } else {
             $self->log->debug("Using standard field class");
             $self->add_fields(
-                Workflow::Action::InputField->new($field_info) );
+                Workflow::InputField->new($field_info) );
         }
     }
 
@@ -418,15 +418,15 @@ an example on how you easily do this by overriding new():
 
 =head3 required_fields()
 
-Return a list of L<Workflow::Action::InputField> objects that are required.
+Return a list of L<Workflow::InputField> objects that are required.
 
 =head3 optional_fields()
 
-Return a list of L<Workflow::Action::InputField> objects that are optional.
+Return a list of L<Workflow::InputField> objects that are optional.
 
 =head3 fields()
 
-Return a list of all L<Workflow::Action::InputField> objects
+Return a list of all L<Workflow::InputField> objects
 associated with this action.
 
 
@@ -440,7 +440,7 @@ It sets up the necessary validators based on the on configured actions, input fi
 
 =head3 add_field( @fields )
 
-Add one or more L<Workflow::Action::InputField>s to the action.
+Add one or more L<Workflow::InputField>s to the action.
 
 =head3 add_validators( @validator_config )
 

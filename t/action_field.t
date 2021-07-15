@@ -6,18 +6,18 @@ use TestUtil;
 use Test::Exception;
 use Test::More  tests => 16;
 
-require_ok( 'Workflow::Action::InputField' );
+require_ok( 'Workflow::InputField' );
 
 my $action;
 
-dies_ok { $action = Workflow::Action::InputField->new({}) };
+dies_ok { $action = Workflow::InputField->new({}) };
 
-ok($action = Workflow::Action::InputField->new({
+ok($action = Workflow::InputField->new({
     name        => 'test',
     is_required => 'yes',
 }));
 
-isa_ok($action, 'Workflow::Action::InputField');
+isa_ok($action, 'Workflow::InputField');
 
 my @values;
 
@@ -38,7 +38,7 @@ is($action->is_required, 'yes');
 
 is($action->is_optional, 'no');
 
-ok($action = Workflow::Action::InputField->new({
+ok($action = Workflow::InputField->new({
     name        => 'test',
     is_required => 'no',
 }));
@@ -47,7 +47,7 @@ is($action->is_required, 'no');
 
 is($action->is_optional, 'yes');
 
-ok($action = Workflow::Action::InputField->new({
+ok($action = Workflow::InputField->new({
     name        => 'test',
 }));
 

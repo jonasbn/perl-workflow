@@ -222,17 +222,29 @@ sub get_history {
     $self->{_histories} ||= [];
     my @uniq_history = ();
     my %seen_ids     = ();
-    my @all_history  = (
-        $self->_factory()->get_workflow_history($self),
-        @{ $self->{_histories} }
-    );
-    foreach my $history (@all_history) {
-        my $id = $history->id;
-        if ($id) {
+
+    foreach my $history (
+        $self->_factory()->get_workflow_history($self)
+        ) {
+        my $id = $history->{id};
+        if (defined $id) {
             unless ( $seen_ids{$id} ) {
+                $seen_ids{$id}++;
+                my $hist = Workflow::History->new($history);
+                $hist->set_saved;
+                push @uniq_history, $hist;
+            }
+        } else {
+            die "Persister returned history item without 'id' key";
+        }
+    }
+    foreach my $history (@{ $self->{_histories} }) {
+        my $id = $history->id;
+        if (defined $id) {
+            unless ( $seen_ids{$id} ) {
+                $seen_ids{$id}++;
                 push @uniq_history, $history;
             }
-            $seen_ids{$id}++;
         } else {
             push @uniq_history, $history;
         }

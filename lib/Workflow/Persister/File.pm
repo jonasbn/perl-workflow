@@ -87,7 +87,9 @@ sub create_history {
         my $history_id = $generator->pre_fetch_id();
         $history->id($history_id);
         my $history_file = catfile( $history_dir, $history_id );
-        $self->serialize_object( $history_file, $history );
+        # Serialize as hash so reconstituting the object returns a hash again
+        # we need to return a list of hashes when returning the history list.
+        $self->serialize_object( $history_file, { %$history } );
         $self->log->info("Created history object '$history_id' ok");
         $history->set_saved();
     }
@@ -107,7 +109,6 @@ sub fetch_history {
     foreach my $history_file (@history_files) {
         $self->log->debug("Reading history from file '$history_file'");
         my $history = $self->constitute_object($history_file);
-        $history->set_saved();
         push @histories, $history;
     }
     return @histories;

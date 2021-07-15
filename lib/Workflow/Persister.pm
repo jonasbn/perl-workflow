@@ -239,7 +239,9 @@ C<id> and C<saved> values set according to the saved results.
 Stub that warns that the method should be overwritten in the derived
 Persister. Since this is a SUPER class.
 
-The derived class method should return a list of L<Workflow::History> objects.
+The derived class method should return a list of hashes containing at least
+the `id` key. The hashes will be used by the workflow object to instantiate
+L<Workflow::History> objects (or a derived class).
 
 
 =head3 get_create_user( $workflow )

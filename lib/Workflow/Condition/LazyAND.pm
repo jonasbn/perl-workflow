@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '1.55';
 
-use base qw( Workflow::Condition::Nested );
+use base qw( Workflow::Condition );
 use Workflow::Exception qw( condition_error configuration_error );
 use English qw( -no_match_vars );
 

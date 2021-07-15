@@ -2,7 +2,7 @@
 
 <workflow>
     <type>WFNEST</type>
-    <description>Test Workflow for Workflow::Condition::Nested</description>
+    <description>Test Workflow for nested use of Workflow::Condition</description>
     <persister>TestWFNest</persister>
 
     <state name="INITIAL">
